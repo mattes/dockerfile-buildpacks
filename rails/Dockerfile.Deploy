@@ -1,0 +1,76 @@
+# docker build -f Dockerfile.Deploy --build-arg VERSION=123 -t rails:deploy .
+FROM rails:build AS deploy 
+
+ENV RAILS_ENV production
+ENV NODE_ENV production
+ENV ENV production
+
+WORKDIR /app
+
+ADD . /app/
+
+# bundle install without test/ development gems
+RUN bundle config set without 'test development' &&\
+    bundle install --jobs 4 --retry 3 --local &&\
+    bundle clean --force
+
+# Clean up directories that end up in the distroless image below.
+# If EXTRA_PKGS were used in rails:base, set `--build-arg PURGE_PKGS='package1 package2'
+# to remove additional packages.
+ARG PURGE_PKGS=''
+RUN apt-get --auto-remove -y purge \
+      build-essential \
+      pkg-config \
+      git \
+      curl \
+      ca-certificates \
+      tzdata \
+      $PURGE_PKGS &&\
+    apt-get clean &&\
+    rm -rf /app/node_modules &&\
+    rm -rf /app/tmp/* &&\
+    rm -rf /app/log/* &&\
+    find /app -type d \( -iname '.git' \) | xargs rm -rf &&\
+    find /app -type f \( -iname '*.log' \) -delete &&\
+    rm -rf /opt/rbenv/versions/current/lib/ruby/gems/*/cache &&\
+    rm -rf /opt/rbenv/versions/current/lib/ruby/gems/*/doc &&\
+    rm -rf /opt/rbenv/versions/current/share/man &&\
+    find /opt/rbenv/versions -type d \( -iname '.git' \) | xargs rm -rf &&\
+    find /opt/rbenv/versions -type f \( -iname '*.log' -o -iname '*.a' -o -iname '*.o' -o -iname '*.h' -o -iname '*.c' -o -iname '*.d' -o -iname '*.hpp' -o -iname '*.cpp' \) -delete
+
+
+# Copy Ruby, Gems, and the /app into distroless
+# Make sure to match debian version from Dockerfile.Base
+# https://github.com/GoogleContainerTools/distroless
+# Add `:debug` tag and docker run with `--entrypoint sh` to get busybox for debugging.
+FROM gcr.io/distroless/base-debian10
+
+ARG VERSION=''
+ENV VERSION=$VERSION
+
+ENV PATH /opt/rbenv/versions/current/bin:$PATH
+ENV HOME /tmp
+
+ENV RAILS_ENV production
+ENV NODE_ENV production
+ENV ENV production
+
+# Stop looking for NodeJS in production (all assets are pre-compiled)
+ENV EXECJS_RUNTIME Disabled
+
+# Copy Ruby, Gems and /app
+COPY --from=deploy /opt/rbenv/versions /opt/rbenv/versions
+COPY --from=deploy --chown=65534:65534 /app /app
+
+# Merge Ruby build dependencies into distroless. 
+COPY --from=deploy /lib/x86_64-linux-gnu/*.so* /lib/x86_64-linux-gnu/
+COPY --from=deploy /usr/lib/x86_64-linux-gnu/*.so* /usr/lib/x86_64-linux-gnu/
+
+# Set user to distroless' NOBODY to run as non-root
+# https://github.com/GoogleContainerTools/distroless/blob/3e15f614453ff1923441576fba635259bd456f22/base/BUILD#L11
+USER 65534
+
+WORKDIR /app
+
+ENTRYPOINT ["ruby", "/app/bin/bundle", "exec"]
+

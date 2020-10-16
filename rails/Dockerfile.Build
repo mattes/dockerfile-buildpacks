@@ -1,0 +1,27 @@
+# docker build -f Dockerfile.Build -t rails:build .
+FROM rails:base 
+
+# Set to development env and install dependencies
+ENV RAILS_ENV development
+ENV NODE_ENV development
+ENV ENV development
+
+WORKDIR /app
+
+ADD package.json yarn.lock /app/
+
+ADD Gemfile Gemfile.lock /app/
+
+RUN yarn install --non-interactive --frozen-lockfile
+
+RUN bundle config set frozen 'true' &&\
+    bundle install --jobs 4 --retry 3
+
+# Set to production env, because rails:build will be used
+# to perform mostly "production" tasks, like asset precompiling,
+# or running migrations. Also, run these tasks in a shell.
+ENV RAILS_ENV production
+ENV NODE_ENV production
+ENV ENV production
+ENTRYPOINT ["/bin/sh", "-c"]
+
