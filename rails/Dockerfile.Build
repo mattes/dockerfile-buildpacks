@@ -1,5 +1,5 @@
 # docker build -f Dockerfile.Build -t rails:build .
-FROM rails:base 
+FROM rails:base
 
 # Set to development env and install dependencies
 ENV RAILS_ENV development

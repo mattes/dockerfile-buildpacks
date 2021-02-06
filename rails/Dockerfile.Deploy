@@ -32,11 +32,11 @@ RUN apt-get --auto-remove -y purge \
     rm -rf /app/log/* &&\
     find /app -type d \( -iname '.git' \) | xargs rm -rf &&\
     find /app -type f \( -iname '*.log' \) -delete &&\
-    rm -rf /opt/rbenv/versions/current/lib/ruby/gems/*/cache &&\
-    rm -rf /opt/rbenv/versions/current/lib/ruby/gems/*/doc &&\
-    rm -rf /opt/rbenv/versions/current/share/man &&\
-    find /opt/rbenv/versions -type d \( -iname '.git' \) | xargs rm -rf &&\
-    find /opt/rbenv/versions -type f \( -iname '*.log' -o -iname '*.a' -o -iname '*.o' -o -iname '*.h' -o -iname '*.c' -o -iname '*.d' -o -iname '*.hpp' -o -iname '*.cpp' \) -delete
+    rm -rf /opt/ruby/lib/ruby/gems/*/cache &&\
+    rm -rf /opt/ruby/lib/ruby/gems/*/doc &&\
+    rm -rf /opt/ruby/share/man &&\
+    find /opt/ruby -type d \( -iname '.git' \) | xargs rm -rf &&\
+    find /opt/ruby -type f \( -iname '*.log' -o -iname '*.a' -o -iname '*.o' -o -iname '*.h' -o -iname '*.c' -o -iname '*.d' -o -iname '*.hpp' -o -iname '*.cpp' \) -delete
 
 
 # Copy Ruby, Gems, and the /app into distroless
@@ -48,7 +48,7 @@ FROM gcr.io/distroless/base-debian10
 ARG VERSION=''
 ENV VERSION=$VERSION
 
-ENV PATH /opt/rbenv/versions/current/bin:$PATH
+ENV PATH /opt/ruby/bin:$PATH
 ENV HOME /tmp
 
 ENV RAILS_ENV production
@@ -59,7 +59,7 @@ ENV ENV production
 ENV EXECJS_RUNTIME Disabled
 
 # Copy Ruby, Gems and /app
-COPY --from=deploy /opt/rbenv/versions /opt/rbenv/versions
+COPY --from=deploy /opt/ruby /opt/ruby
 COPY --from=deploy --chown=65534:65534 /app /app
 
 # Merge Ruby build dependencies into distroless. 
@@ -72,5 +72,5 @@ USER 65534
 
 WORKDIR /app
 
-ENTRYPOINT ["ruby", "/app/bin/bundle", "exec"]
+ENTRYPOINT ["/opt/ruby/bin/ruby", "/app/bin/bundle", "exec"]
 

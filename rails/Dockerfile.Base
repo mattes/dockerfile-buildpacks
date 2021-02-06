@@ -21,42 +21,25 @@ RUN apt-get update && \
 
 WORKDIR /tmp
 
-# Install nodenev
-ENV NODENV_ROOT /opt/nodenv
-ENV PATH $NODENV_ROOT/shims:$NODENV_ROOT/bin:$PATH
-RUN git clone https://github.com/nodenv/nodenv.git $NODENV_ROOT &&\
-    git clone https://github.com/nodenv/node-build.git $NODENV_ROOT/plugins/node-build
-
-# Install rbenv
-ENV RBENV_ROOT /opt/rbenv
-ENV PATH $RBENV_ROOT/shims:$RBENV_ROOT/bin:$PATH
-RUN git clone https://github.com/rbenv/rbenv.git $RBENV_ROOT &&\
-    git clone https://github.com/rbenv/ruby-build.git $RBENV_ROOT/plugins/ruby-build
-
-# Install Node version from .node-version
-# and link /opt/nodenv/versions/current to installed version
+# Install node
 ADD .node-version .
-RUN nodenv install $(head .node-version) 2>&1 &&\
-    nodenv global $(head .node-version) &&\
-    nodenv rehash &&\
+ENV PATH /opt/node/bin:$PATH
+RUN git clone https://github.com/nodenv/node-build.git /opt/node-build &&\
+    /opt/node-build/bin/node-build $(head .node-version) /opt/node &&\
     node --version &&\
     npm --version &&\
     npm install -g yarn &&\
-    nodenv rehash &&\
     yarn --version &&\
-    ln -s /opt/nodenv/versions/$(nodenv version-name) /opt/nodenv/versions/current
+    rm -r /opt/node-build
 
-# Install Ruby version from .ruby-version
-# and link /opt/rbenv/versions/current to installed version
+# Install ruby
 ADD .ruby-version .
-ENV RUBY_CONFIGURE_OPTS --disable-install-doc
-RUN rbenv install $(head .ruby-version) 2>&1 &&\
-    rbenv global $(head .ruby-version) &&\
-    rbenv rehash &&\
+ENV PATH /opt/ruby/bin:$PATH
+RUN git clone https://github.com/rbenv/ruby-build.git /opt/ruby-build &&\
+    /opt/ruby-build/bin/ruby-build $(head .ruby-version) /opt/ruby &&\
     gem install bundler --no-document &&\
-    rbenv rehash &&\
     ruby --version &&\
-    ln -s /opt/rbenv/versions/$(rbenv version-name) /opt/rbenv/versions/current
+    rm -r /opt/ruby-build
 
 
 # Fix for sassc 2.2.1 crash
