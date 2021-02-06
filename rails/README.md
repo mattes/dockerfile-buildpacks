@@ -3,7 +3,7 @@
 Staged (for easier caching and tooling) Dockerfiles to bundle a Rails application. 
 The final Docker image will be a [distroless](https://github.com/GoogleContainerTools/distroless) image. 
 
-__Dockerfile.Base__ installs the base layer with apt packages, rbenv and nodenv. It installs Ruby and Node
+__Dockerfile.Base__ installs the base layer with apt packages. It installs Ruby and Node
 via the mounted `.ruby-version` and `.node-version` files.
 
 __Dockerfile.Build__ runs `bundle install` and `yarn install` to install dependencies.
