@@ -1,5 +1,7 @@
-# docker build -f Dockerfile.Build -t rails:build .
+# docker build -f Dockerfile.Build --build-arg RUN_AFTER_BUILD='echo "hello world"' -t rails:build .
 FROM rails:base
+
+ARG RUN_AFTER_BUILD=''
 
 # Set to development env and install dependencies
 ENV RAILS_ENV development
@@ -16,6 +18,8 @@ RUN yarn install --non-interactive --frozen-lockfile
 
 RUN bundle config set frozen 'true' &&\
     bundle install --jobs 4 --retry 3
+
+RUN $RUN_AFTER_BUILD
 
 # Set to production env, because rails:build will be used
 # to perform mostly "production" tasks, like asset precompiling,
