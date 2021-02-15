@@ -65,6 +65,7 @@ COPY --from=deploy --chown=65534:65534 /app /app
 # Merge Ruby build dependencies into distroless. 
 COPY --from=deploy /lib/x86_64-linux-gnu/*.so* /lib/x86_64-linux-gnu/
 COPY --from=deploy /usr/lib/x86_64-linux-gnu/*.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=deploy /usr/local/lib/*.so* /usr/local/lib/
 
 # Set user to distroless' NOBODY to run as non-root
 # https://github.com/GoogleContainerTools/distroless/blob/3e15f614453ff1923441576fba635259bd456f22/base/BUILD#L11
