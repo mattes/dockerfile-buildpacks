@@ -38,9 +38,6 @@ RUN apt-get --auto-remove -y purge \
     find /opt/ruby -type d \( -iname '.git' \) | xargs rm -rf &&\
     find /opt/ruby -type f \( -iname '*.log' -o -iname '*.a' -o -iname '*.o' -o -iname '*.h' -o -iname '*.c' -o -iname '*.d' -o -iname '*.hpp' -o -iname '*.cpp' \) -delete
 
-# Ensure the following directories exist, this is important for the COPY step in the next build step.
-RUN mkdir -p /lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu /usr/local/lib
-
 # Copy Ruby, Gems, and the /app into distroless
 # Make sure to match debian version from Dockerfile.Base
 # https://github.com/GoogleContainerTools/distroless
@@ -67,7 +64,6 @@ COPY --from=deploy --chown=65534:65534 /app /app
 # Merge Ruby build dependencies into distroless. 
 COPY --from=deploy /lib/x86_64-linux-gnu/*.so* /lib/x86_64-linux-gnu/
 COPY --from=deploy /usr/lib/x86_64-linux-gnu/*.so* /usr/lib/x86_64-linux-gnu/
-COPY --from=deploy /usr/local/lib/*.so* /usr/local/lib/
 
 # Set user to distroless' NOBODY to run as non-root
 # https://github.com/GoogleContainerTools/distroless/blob/3e15f614453ff1923441576fba635259bd456f22/base/BUILD#L11
